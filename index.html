@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiMoCompare — AI Product Decision Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;510;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#02040a;--surface:#0a0c14;--surface2:#10131e;--surface3:#161928;
+  --border:#1a1d2e;--border2:#252840;--text:#e8eaf0;--text2:#9ca0b8;
+  --text3:#6b7094;--accent:#6366f1;--accent2:#818cf8;--accent-dim:rgba(99,102,241,.12);
+  --green:#22c55e;--green-dim:rgba(34,197,94,.12);
+  --red:#ef4444;--red-dim:rgba(239,68,68,.12);
+  --amber:#f59e0b;--amber-dim:rgba(245,158,11,.12);
+  --cyan:#06b6d4;--cyan-dim:rgba(6,182,212,.12);
+  --pink:#ec4899;--pink-dim:rgba(236,72,153,.12);
+  --radius:12px;--radius-lg:16px;--radius-xl:20px;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-weight:500;letter-spacing:-.01em}
+
+/* ── Mesh Gradient Background ── */
+.mesh-bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+.mesh-bg::before{content:'';position:absolute;top:-30%;left:-20%;width:80vw;height:80vh;
+  background:radial-gradient(ellipse at center,rgba(99,102,241,.08) 0%,transparent 70%);
+  animation:meshFloat1 20s ease-in-out infinite}
+.mesh-bg::after{content:'';position:absolute;bottom:-20%;right:-15%;width:70vw;height:70vh;
+  background:radial-gradient(ellipse at center,rgba(6,182,212,.06) 0%,transparent 70%);
+  animation:meshFloat2 25s ease-in-out infinite}
+@keyframes meshFloat1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(5%,3%) scale(1.1)}}
+@keyframes meshFloat2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-4%,-2%) scale(1.08)}}
+
+/* ── Floating Particles ── */
+.particles{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.particle{position:absolute;width:2px;height:2px;background:rgba(99,102,241,.3);border-radius:50%;
+  animation:particleRise linear infinite}
+@keyframes particleRise{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-10vh) scale(1);opacity:0}}
+
+/* ── Layout ── */
+.app{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 24px}
+
+/* ── Header ── */
+.hero{text-align:center;padding:80px 0 48px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;
+  background:var(--accent-dim);border:1px solid rgba(99,102,241,.2);border-radius:100px;
+  font-size:.75rem;font-weight:600;color:var(--accent2);letter-spacing:.04em;text-transform:uppercase;margin-bottom:20px}
+.hero-badge .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:-.03em;
+  background:linear-gradient(135deg,#fff 0%,var(--accent2) 50%,var(--cyan) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.15;margin-bottom:16px}
+.hero p{font-size:1.05rem;color:var(--text2);max-width:600px;margin:0 auto;line-height:1.6;font-weight:400}
+.hero p strong{color:var(--text);font-weight:600}
+
+/* ── Glass Card ── */
+.glass{background:rgba(16,19,30,.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--border);border-radius:var(--radius-xl);position:relative;overflow:hidden}
+.glass::before{content:'';position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(135deg,rgba(99,102,241,.05) 0%,transparent 50%);pointer-events:none}
+
+/* ── Step Indicator ── */
+.steps{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:40px}
+.step{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:.85rem;font-weight:600;
+  color:var(--text3);transition:all .3s;cursor:pointer}
+.step.active{color:var(--accent2)}
+.step.done{color:var(--green)}
+.step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:700;background:var(--surface3);border:2px solid var(--border2);transition:all .3s}
+.step.active .step-num{background:var(--accent-dim);border-color:var(--accent);color:var(--accent2)}
+.step.done .step-num{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.step-line{width:40px;height:2px;background:var(--border2)}
+.step.done+.step-line{background:var(--green)}
+
+/* ── Form Section ── */
+.form-section{padding:32px}
+.form-section h2{font-size:1.1rem;font-weight:700;margin-bottom:24px;letter-spacing:-.02em}
+.product-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+@media(max-width:700px){.product-grid{grid-template-columns:1fr}}
+.product-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;transition:border-color .2s}
+.product-card:focus-within{border-color:var(--accent)}
+.product-card .label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.product-card .label .num{width:20px;height:20px;border-radius:50%;background:var(--accent-dim);
+  color:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800}
+.product-card input,.product-card textarea,.product-card select{width:100%;background:var(--surface3);
+  border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);
+  font-family:inherit;font-size:.875rem;font-weight:500;transition:border-color .2s;outline:none}
+.product-card input:focus,.product-card textarea:focus{border-color:var(--accent)}
+.product-card textarea{resize:vertical;min-height:80px;line-height:1.5}
+.product-card input::placeholder,.product-card textarea::placeholder{color:var(--text3)}
+
+/* ── Use Case ── */
+.usecase-section{margin-bottom:24px}
+.usecase-section label{display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--text3);margin-bottom:8px}
+.usecase-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 18px;color:var(--text);font-family:inherit;font-size:.9rem;font-weight:500;
+  transition:border-color .2s;outline:none}
+.usecase-input:focus{border-color:var(--accent)}
+.usecase-input::placeholder{color:var(--text3)}
+
+/* ── Priority Sliders ── */
+.priorities{margin-bottom:28px}
+.priorities h3{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:16px}
+.priority-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.priority-label{width:120px;font-size:.8rem;font-weight:600;color:var(--text2);flex-shrink:0}
+.priority-slider{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;
+  background:var(--surface3);outline:none;cursor:pointer}
+.priority-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--accent2);cursor:pointer;transition:transform .15s}
+.priority-slider::-webkit-slider-thumb:hover{transform:scale(1.2)}
+.priority-val{width:30px;text-align:right;font-size:.75rem;font-weight:700;color:var(--accent2)}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 28px;
+  border-radius:var(--radius);font-family:inherit;font-size:.875rem;font-weight:600;
+  cursor:pointer;border:none;transition:all .2s;letter-spacing:-.01em}
+.btn-primary{background:var(--accent);color:#fff;width:100%}
+.btn-primary:hover{background:#5558e6;transform:translateY(-1px);box-shadow:0 8px 24px rgba(99,102,241,.25)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-secondary{background:var(--surface3);color:var(--text2);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--text)}
+
+/* ── Loading ── */
+.loading-wrap{display:none;text-align:center;padding:60px 20px}
+.loading-wrap.active{display:block}
+.loading-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:.85rem;color:var(--text2);font-weight:500}
+.loading-dots::after{content:'';animation:dots 1.5s steps(4) infinite}
+@keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+
+/* ── Results ── */
+.results{display:none}
+.results.active{display:block}
+.results-header{text-align:center;margin-bottom:32px}
+.results-header h2{font-size:1.4rem;font-weight:800;margin-bottom:8px;letter-spacing:-.02em}
+.results-header p{font-size:.85rem;color:var(--text2)}
+
+/* ── Winner Banner ── */
+.winner-banner{background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(6,182,212,.08));
+  border:1px solid rgba(99,102,241,.2);border-radius:var(--radius-xl);padding:24px 32px;
+  text-align:center;margin-bottom:32px;position:relative;overflow:hidden}
+.winner-banner::after{content:'👑';position:absolute;top:12px;right:20px;font-size:2rem;opacity:.3}
+.winner-banner .tag{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--accent2);margin-bottom:6px}
+.winner-banner .name{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+.winner-banner .reason{font-size:.85rem;color:var(--text2);line-height:1.5}
+
+/* ── Comparison Table ── */
+.compare-table{margin-bottom:32px}
+.compare-row{display:grid;grid-template-columns:140px 1fr 1fr;gap:1px;background:var(--border);
+  border-radius:var(--radius);overflow:hidden;margin-bottom:2px}
+@media(max-width:600px){.compare-row{grid-template-columns:100px 1fr 1fr}}
+.compare-row .cell{background:var(--surface2);padding:12px 16px;font-size:.8rem}
+.compare-row .cell.header{background:var(--surface3);font-weight:700;color:var(--text);
+  text-align:center;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
+.compare-row .cell.dim{color:var(--text3);font-weight:600;font-size:.75rem}
+.compare-row .cell.win{background:rgba(99,102,241,.06);position:relative}
+.compare-row .cell.win::after{content:'✓';position:absolute;top:8px;right:10px;color:var(--green);font-size:.7rem;font-weight:700}
+.compare-row .cell.warn{color:var(--amber)}
+.compare-row .cell.bad{color:var(--red)}
+
+/* ── Verdict Cards ── */
+.verdict-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px}
+@media(max-width:700px){.verdict-grid{grid-template-columns:1fr}}
+.verdict-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.verdict-card.winner{border-color:var(--accent);background:rgba(99,102,241,.04)}
+.verdict-card .product-name{font-size:1rem;font-weight:700;margin-bottom:4px}
+.verdict-card .score{font-size:2rem;font-weight:800;margin-bottom:8px}
+.verdict-card .score.high{color:var(--green)}
+.verdict-card .score.mid{color:var(--amber)}
+.verdict-card .score.low{color:var(--red)}
+.verdict-card .pros,.verdict-card .cons{margin-top:12px}
+.verdict-card .pros h4,.verdict-card .cons h4{font-size:.7rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:6px}
+.verdict-card .pros h4{color:var(--green)}
+.verdict-card .cons h4{color:var(--red)}
+.verdict-card ul{list-style:none;padding:0}
+.verdict-card li{font-size:.8rem;color:var(--text2);padding:3px 0;padding-left:16px;position:relative;line-height:1.4}
+.verdict-card .pros li::before{content:'+';position:absolute;left:0;color:var(--green);font-weight:700}
+.verdict-card .cons li::before{content:'−';position:absolute;left:0;color:var(--red);font-weight:700}
+
+/* ── AI Analysis ── */
+.ai-analysis{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;margin-bottom:32px}
+.ai-analysis h3{font-size:.85rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ai-analysis h3 .icon{font-size:1rem}
+.ai-analysis .content{font-size:.85rem;color:var(--text2);line-height:1.7;white-space:pre-wrap}
+
+/* ── Actions ── */
+.actions{display:flex;gap:12px;flex-wrap:wrap}
+.actions .btn{flex:1;min-width:140px}
+
+/* ── Chat Widget ── */
+.chat-toggle{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;
+  background:var(--accent);border:none;color:#fff;font-size:1.4rem;cursor:pointer;z-index:100;
+  box-shadow:0 4px 20px rgba(99,102,241,.3);transition:all .2s;display:flex;align-items:center;justify-content:center}
+.chat-toggle:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(99,102,241,.4)}
+.chat-panel{position:fixed;bottom:90px;right:24px;width:380px;max-height:500px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);
+  z-index:100;display:none;flex-direction:column;overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.chat-panel.open{display:flex}
+.chat-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.chat-head h4{font-size:.85rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.chat-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.1rem;padding:4px}
+.chat-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:340px}
+.chat-msg{max-width:85%;padding:10px 14px;border-radius:12px;font-size:.8rem;line-height:1.5;font-weight:500}
+.chat-msg.user{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.chat-msg.bot{background:var(--surface3);color:var(--text2);align-self:flex-start;border-bottom-left-radius:4px}
+.chat-input-wrap{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px}
+.chat-input-wrap input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;color:var(--text);font-family:inherit;font-size:.8rem;outline:none}
+.chat-input-wrap input:focus{border-color:var(--accent)}
+.chat-send{background:var(--accent);border:none;color:#fff;width:36px;height:36px;border-radius:8px;
+  cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center}
+
+/* ── Examples ── */
+.examples{margin-top:32px;text-align:center}
+.examples h3{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:12px}
+.example-chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.example-chip{padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;
+  font-size:.75rem;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s}
+.example-chip:hover{border-color:var(--accent);color:var(--accent2)}
+
+/* ── Footer ── */
+.footer{text-align:center;padding:48px 0 32px;font-size:.75rem;color:var(--text3)}
+.footer a{color:var(--accent2);text-decoration:none}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="mesh-bg"></div>
+<div class="particles" id="particles"></div>
+
+<div class="app">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge"><span class="dot"></span> Powered by Xiaomi MiMo V2.5</div>
+    <h1>MiMoCompare</h1>
+    <p>Stop comparing specs. Start comparing <strong>what actually matters to you.</strong>
+    MiMo analyzes real pain points — not marketing fluff.</p>
+  </section>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" data-step="1" id="step1"><span class="step-num">1</span> Products</div>
+    <div class="step-line"></div>
+    <div class="step" data-step="2" id="step2"><span class="step-num">2</span> Priorities</div>
+    <div class="step-line"></div>
+    <div class="step" data-step="3" id="step3"><span class="step-num">3</span> Results</div>
+  </div>
+
+  <!-- Step 1: Products -->
+  <div class="glass form-section" id="formSection">
+    <h2>What are you comparing?</h2>
+    <div class="product-grid">
+      <div class="product-card">
+        <div class="label"><span class="num">A</span> Product Name</div>
+        <input type="text" id="prodA" placeholder="e.g. iPhone 16 Pro">
+        <div style="margin-top:10px">
+          <div class="label" style="margin-bottom:6px">Key Specs (optional)</div>
+          <textarea id="specsA" placeholder="e.g. A18 Pro chip, 48MP camera, 6.7&quot; OLED, 8GB RAM, titanium build"></textarea>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="label"><span class="num">B</span> Product Name</div>
+        <input type="text" id="prodB" placeholder="e.g. Samsung S25 Ultra">
+        <div style="margin-top:10px">
+          <div class="label" style="margin-bottom:6px">Key Specs (optional)</div>
+          <textarea id="specsB" placeholder="e.g. Snapdragon 8 Elite, 200MP camera, 6.9&quot; AMOLED, 12GB RAM, S Pen"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="usecase-section">
+      <label>What will you use it for? (this is the secret sauce)</label>
+      <input type="text" class="usecase-input" id="usecase" placeholder="e.g. Heavy mobile gaming + social media + travel photos">
+    </div>
+
+    <div class="examples">
+      <h3>Quick examples</h3>
+      <div class="example-chips">
+        <span class="example-chip" onclick="fillExample('phone')">📱 iPhone vs Samsung</span>
+        <span class="example-chip" onclick="fillExample('laptop')">💻 MacBook vs ThinkPad</span>
+        <span class="example-chip" onclick="fillExample('headphone')">🎧 AirPods vs Sony XM5</span>
+        <span class="example-chip" onclick="fillExample('car')">🚗 Model 3 vs BYD Seal</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Priorities -->
+  <div class="glass form-section" id="prioritySection" style="display:none">
+    <h2>What matters most to you?</h2>
+    <p style="font-size:.8rem;color:var(--text3);margin-bottom:20px">Drag sliders to weight each factor. MiMo will prioritize accordingly.</p>
+    <div class="priorities">
+      <div class="priority-row">
+        <span class="priority-label">💰 Price</span>
+        <input type="range" class="priority-slider" min="1" max="10" value="7" data-key="price" oninput="updatePriority(this)">
+        <span class="priority-val">7</span>
+      </div>
+      <div class="priority-row">
+        <span class="priority-label">⚡ Performance</span>
+        <input type="range" class="priority-slider" min="1" max="10" value="8" data-key="performance" oninput="updatePriority(this)">
+        <span class="priority-val">8</span>
+      </div>
+      <div class="priority-row">
+        <span class="priority-label">📸 Camera/Quality</span>
+        <input type="range" class="priority-slider" min="1" max="10" value="5" data-key="camera" oninput="updatePriority(this)">
+        <span class="priority-val">5</span>
+      </div>
+      <div class="priority-row">
+        <span class="priority-label">🔋 Battery</span>
+        <input type="range" class="priority-slider" min="1" max="10" value="6" data-key="battery" oninput="updatePriority(this)">
+        <span class="priority-val">6</span>
+      </div>
+      <div class="priority-row">
+        <span class="priority-label">🎨 Design</span>
+        <input type="range" class="priority-slider" min="1" max="10" value="4" data-key="design" oninput="updatePriority(this)">
+        <span class="priority-val">4</span>
+      </div>
+      <div class="priority-row">
+        <span class="priority-label">📦 Ecosystem</span>
+        <input type="range" class="priority-slider" min="1" max="10" value="5" data-key="ecosystem" oninput="updatePriority(this)">
+        <span class="priority-val">5</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px">
+      <button class="btn btn-secondary" onclick="goToStep(1)" style="flex:0 0 auto">← Back</button>
+      <button class="btn btn-primary" onclick="runComparison()" id="compareBtn">🧠 Compare with MiMo</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-wrap" id="loadingWrap">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">MiMo is analyzing products<span class="loading-dots"></span></div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="resultsSection">
+    <div class="results-header">
+      <h2>🏆 Comparison Results</h2>
+      <p>Personalized for your specific use case</p>
+    </div>
+
+    <div class="winner-banner" id="winnerBanner">
+      <div class="tag">Recommended for you</div>
+      <div class="name" id="winnerName">—</div>
+      <div class="reason" id="winnerReason">—</div>
+    </div>
+
+    <div class="verdict-grid" id="verdictGrid"></div>
+
+    <div class="compare-table" id="compareTable"></div>
+
+    <div class="ai-analysis">
+      <h3><span class="icon">🧠</span> MiMo Analysis</h3>
+      <div class="content" id="aiAnalysis">—</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="resetAll()">🔄 Compare Again</button>
+      <button class="btn btn-primary" onclick="toggleChat()" style="flex:0 0 auto">💬 Ask MiMo</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Built for <a href="https://100t.xiaomimimo.com" target="_blank">Xiaomi MiMo 100T Creator Program</a> · Single HTML · Zero Dependencies
+  </div>
+</div>
+
+<!-- Chat -->
+<button class="chat-toggle" onclick="toggleChat()" id="chatToggle" title="Chat with MiMo">💬</button>
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-head">
+    <h4>🧠 Chat with MiMo</h4>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-body" id="chatBody">
+    <div class="chat-msg bot">Hi! I'm MiMo. Ask me anything about the products you're comparing, or get general buying advice. 🛒</div>
+  </div>
+  <div class="chat-input-wrap">
+    <input type="text" id="chatInput" placeholder="Ask about the comparison..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chat-send" onclick="sendChat()">→</button>
+  </div>
+</div>
+
+<script>
+// ── Particles ──
+(function(){
+  const c=document.getElementById('particles');
+  for(let i=0;i<25;i++){
+    const p=document.createElement('div');p.className='particle';
+    p.style.left=Math.random()*100+'%';
+    p.style.animationDuration=(15+Math.random()*20)+'s';
+    p.style.animationDelay=Math.random()*15+'s';
+    p.style.width=p.style.height=(1+Math.random()*2)+'px';
+    c.appendChild(p);
+  }
+})();
+
+// ── State ──
+let currentStep=1;
+let priorities={};
+let lastComparison=null;
+
+// ── Steps ──
+function goToStep(n){
+  currentStep=n;
+  document.querySelectorAll('.step').forEach(s=>{
+    const sn=+s.dataset.step;
+    s.classList.remove('active','done');
+    if(sn===n)s.classList.add('active');
+    else if(sn<n)s.classList.add('done');
+  });
+  document.getElementById('formSection').style.display=n===1?'block':'none';
+  document.getElementById('prioritySection').style.display=n===2?'block':'none';
+  document.getElementById('loadingWrap').classList.toggle('active',false);
+  document.getElementById('resultsSection').classList.toggle('active',n===3);
+}
+
+// Continue from step 1 → 2
+document.getElementById('formSection').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey&&e.target.tagName!=='TEXTAREA'){e.preventDefault();goToStep(2)}
+});
+
+// Clicking step indicators
+document.querySelectorAll('.step').forEach(s=>s.addEventListener('click',()=>{
+  const n=+s.dataset.step;
+  if(n<3)goToStep(n);
+}));
+
+// ── Priority sliders ──
+function updatePriority(el){
+  el.nextElementSibling.textContent=el.value;
+  priorities[el.dataset.key]=+el.value;
+}
+
+// ── Examples ──
+const examples={
+  phone:{
+    a:'iPhone 16 Pro',sa:'A18 Pro chip, 48MP triple camera, 6.3" OLED 120Hz, 8GB RAM, titanium, iOS 18',
+    b:'Samsung Galaxy S25 Ultra',sb:'Snapdragon 8 Elite, 200MP camera, 6.9" AMOLED 120Hz, 12GB RAM, S Pen, One UI 7',
+    u:'Social media content creation, travel photography, and occasional gaming'
+  },
+  laptop:{
+    a:'MacBook Air M4',sa:'Apple M4, 16GB RAM, 512GB SSD, 13.6" Liquid Retina, 18hr battery, fanless',
+    b:'ThinkPad X1 Carbon Gen 12',sb:'Intel Core Ultra 7, 32GB RAM, 1TB SSD, 14" 2.8K OLED, TrackPoint, MIL-STD',
+    u:'Software development, Docker containers, remote work, travel (light carry)'
+  },
+  headphone:{
+    a:'AirPods Pro 2',sa:'H2 chip, ANC, Adaptive Transparency, 6hr battery, USB-C, spatial audio',
+    b:'Sony WH-1000XM5',sb:'V1 chip, 30hr battery, multipoint, LDAC, best-in-class ANC, foldable',
+    u:'Daily commute (train), office calls, and music listening at home'
+  },
+  car:{
+    a:'Tesla Model 3',sa:'RWD, 513km range, 6.1s 0-100, Autopilot, OTA updates, Supercharger network',
+    b:'BYD Seal',sb:'AWD, 520km range, 3.8s 0-100, DiPilot, Blade Battery, lower price',
+    u:'Daily city commute (30km), weekend trips, first EV, budget-conscious'
+  }
+};
+function fillExample(key){
+  const e=examples[key];
+  document.getElementById('prodA').value=e.a;
+  document.getElementById('specsA').value=e.sa;
+  document.getElementById('prodB').value=e.b;
+  document.getElementById('specsB').value=e.sb;
+  document.getElementById('usecase').value=e.u;
+  // Auto-advance
+  setTimeout(()=>goToStep(2),300);
+}
+
+// ── MiMo API ──
+async function callMiMo(systemPrompt,userPrompt){
+  const resp=await fetch('https://text.pollinations.ai/openai/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'openai',
+      messages:[
+        {role:'system',content:systemPrompt},
+        {role:'user',content:userPrompt}
+      ],
+      temperature:0.3,
+      max_tokens:2000
+    })
+  });
+  const data=await resp.json();
+  return data.choices?.[0]?.message?.content||'';
+}
+
+// ── Run Comparison ──
+async function runComparison(){
+  const prodA=document.getElementById('prodA').value.trim();
+  const prodB=document.getElementById('prodB').value.trim();
+  const specsA=document.getElementById('specsA').value.trim();
+  const specsB=document.getElementById('specsB').value.trim();
+  const usecase=document.getElementById('usecase').value.trim();
+
+  if(!prodA||!prodB){alert('Enter both product names');goToStep(1);return}
+  if(!usecase){alert('Describe your use case — this is what makes the comparison personal');goToStep(1);return}
+
+  // Collect priorities
+  const prioText=Object.entries(priorities).map(([k,v])=>`${k}: ${v}/10`).join(', ');
+
+  goToStep(2);
+  document.getElementById('prioritySection').style.display='none';
+  document.getElementById('loadingWrap').classList.add('active');
+
+  const prompt=`You are MiMoCompare, an AI product decision engine. Your job is NOT to compare marketing specs — it's to figure out what actually matters for THIS user's use case and give a clear recommendation.
+
+PRODUCT A: ${prodA}
+${specsA?`Specs: ${specsA}`:'No specs provided — use your knowledge.'}
+
+PRODUCT B: ${prodB}
+${specsB?`Specs: ${specsB}`:'No specs provided — use your knowledge.'}
+
+USER'S USE CASE: ${usecase}
+
+USER'S PRIORITIES (1-10): ${prioText||'Not set, use balanced weights.'}
+
+Respond in EXACTLY this JSON format (no markdown, no code blocks, just raw JSON):
+{
+  "winner": "Product A or B name",
+  "winner_reason": "1-2 sentence WHY this wins for THIS specific use case",
+  "product_a": {
+    "name": "${prodA}",
+    "score": 85,
+    "pros": ["pro 1", "pro 2", "pro 3"],
+    "cons": ["con 1", "con 2"]
+  },
+  "product_b": {
+    "name": "${prodB}",
+    "score": 78,
+    "pros": ["pro 1", "pro 2", "pro 3"],
+    "cons": ["con 1", "con 2"]
+  },
+  "comparison": [
+    {"category": "Performance", "product_a": "description", "product_b": "description", "winner": "a or b"},
+    {"category": "Camera", "product_a": "description", "product_b": "description", "winner": "a or b"},
+    {"category": "Battery", "product_a": "description", "product_b": "description", "winner": "tie"},
+    {"category": "Build & Design", "product_a": "description", "product_b": "description", "winner": "a or b"},
+    {"category": "Ecosystem", "product_a": "description", "product_b": "description", "winner": "a or b"},
+    {"category": "Value for Money", "product_a": "description", "product_b": "description", "winner": "a or b"}
+  ],
+  "analysis": "3-5 sentence paragraph analyzing the REAL trade-offs for this use case. Be specific and opinionated. Mention what reviews/users ACTUALLY complain about, not spec sheet differences."
+}
+
+Rules:
+- Be OPINIONATED. No "both are great" — pick a winner and defend it.
+- Mention REAL user complaints (overheating, software bugs, durability issues) not just specs.
+- Scores should differ meaningfully (5+ points) unless truly close.
+- The analysis should feel like advice from a friend who owns both, not a review article.`;
+
+  try{
+    const raw=await callMiMo('You are MiMoCompare. Always respond with valid JSON only. No markdown formatting.',prompt);
+    // Parse JSON — strip any markdown wrapping
+    let jsonStr=raw.trim();
+    if(jsonStr.startsWith('```'))jsonStr=jsonStr.replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');
+    const result=JSON.parse(jsonStr);
+    lastComparison=result;
+    renderResults(result);
+    goToStep(3);
+  }catch(e){
+    console.error('MiMo parse error:',e,'Raw:',raw);
+    alert('MiMo response parsing failed. Try again.');
+    goToStep(1);
+  }
+}
+
+// ── Render Results ──
+function renderResults(r){
+  // Winner banner
+  document.getElementById('winnerName').textContent=r.winner;
+  document.getElementById('winnerReason').textContent=r.winner_reason;
+
+  // Verdict cards
+  const grid=document.getElementById('verdictGrid');
+  grid.innerHTML='';
+  [r.product_a,r.product_b].forEach((p,i)=>{
+    const isWinner=p.name===r.winner;
+    const scoreClass=p.score>=80?'high':p.score>=60?'mid':'low';
+    grid.innerHTML+=`
+      <div class="verdict-card ${isWinner?'winner':''}">
+        <div class="product-name">${p.name} ${isWinner?'👑':''}</div>
+        <div class="score ${scoreClass}">${p.score}/100</div>
+        <div class="pros"><h4>Strengths</h4><ul>${p.pros.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+        <div class="cons"><h4>Weaknesses</h4><ul>${p.cons.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+      </div>`;
+  });
+
+  // Comparison table
+  const table=document.getElementById('compareTable');
+  table.innerHTML='';
+  r.comparison.forEach(row=>{
+    const winA=row.winner==='a';
+    const winB=row.winner==='b';
+    table.innerHTML+=`
+      <div class="compare-row">
+        <div class="cell dim">${row.category}</div>
+        <div class="cell ${winA?'win':''}">${row.product_a}</div>
+        <div class="cell ${winB?'win':''}">${row.product_b}</div>
+      </div>`;
+  });
+
+  // Analysis
+  document.getElementById('aiAnalysis').textContent=r.analysis;
+}
+
+// ── Reset ──
+function resetAll(){
+  lastComparison=null;
+  goToStep(1);
+  document.getElementById('prioritySection').style.display='none';
+}
+
+// ── Chat ──
+function toggleChat(){
+  document.getElementById('chatPanel').classList.toggle('open');
+}
+async function sendChat(){
+  const input=document.getElementById('chatInput');
+  const msg=input.value.trim();if(!msg)return;
+  input.value='';
+  const body=document.getElementById('chatBody');
+  body.innerHTML+=`<div class="chat-msg user">${msg}</div>`;
+  body.scrollTop=body.scrollHeight;
+
+  let context='';
+  if(lastComparison){
+    context=`\n\nContext: User just compared ${lastComparison.product_a.name} vs ${lastComparison.product_b.name}. Winner: ${lastComparison.winner}. Use case was included in the comparison.`;
+  }
+
+  body.innerHTML+=`<div class="chat-msg bot" id="streaming">Thinking...</div>`;
+  body.scrollTop=body.scrollHeight;
+
+  try{
+    const reply=await callMiMo(
+      `You are MiMo, a helpful product advisor. Be concise, opinionated, and practical. Use emoji sparingly.${context}`,
+      msg
+    );
+    document.getElementById('streaming').textContent=reply;
+    document.getElementById('streaming').removeAttribute('id');
+  }catch(e){
+    document.getElementById('streaming').textContent='Sorry, something went wrong. Try again.';
+    document.getElementById('streaming').removeAttribute('id');
+  }
+  body.scrollTop=body.scrollHeight;
+}
+
+// Init
+goToStep(1);
+</script>
+</body>
+</html>
