@@ -85,9 +85,9 @@ MiMo:         → "Pick the S25 Ultra. Here's why for YOUR usage..."
 |---|---|
 | ![](screenshots/01_hero.png) | ![](screenshots/02_priorities.png) |
 | **Hero + Product Input** | **Priority Weighting** |
-| ![](screenshots/03_results.png) | ![](screenshots/04_verdict.png) |
+| ![](screenshots/03_results_top.png) | ![](screenshots/04_verdict.png) |
 | **Personalized Results** | **Verdict Cards + Comparison** |
-| ![](screenshots/05_chat.png) | |
+| ![](screenshots/05_chat_analysis.png) | |
 | **Chat with MiMo** | |
 
 ---
