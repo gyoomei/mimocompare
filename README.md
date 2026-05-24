@@ -74,7 +74,8 @@ MiMo:         → "Pick the S25 Ultra. Here's why for YOUR usage..."
 - **📊 Head-to-Head Table** — Category-by-category breakdown with winner indicators
 - **💬 Chat with MiMo** — Follow-up questions about the comparison
 - **⚡ Quick Examples** — One-click presets for phones, laptops, headphones, cars
-- **🎨 Premium UI** — Animated gradients, glassmorphism, floating particles
+- **🎨 Premium UI** — Dark/light toggle, animated gradients, glassmorphism, floating particles
+- **📱 Fully Responsive** — Mobile (375px), tablet, desktop, large screens all supported
 - **🔒 Zero Backend** — Runs entirely in browser, free forever
 
 ---
@@ -83,12 +84,12 @@ MiMo:         → "Pick the S25 Ultra. Here's why for YOUR usage..."
 
 | | |
 |---|---|
-| ![](screenshots/01_hero.png) | ![](screenshots/02_priorities.png) |
-| **Hero + Product Input** | **Priority Weighting** |
-| ![](screenshots/03_results_top.png) | ![](screenshots/04_verdict.png) |
-| **Personalized Results** | **Verdict Cards + Comparison** |
-| ![](screenshots/05_chat_analysis.png) | |
-| **Chat with MiMo** | |
+| ![](screenshots/01_dark_hero.png) | ![](screenshots/02_dark_priorities.png) |
+| **Dark Theme — Hero** | **Dark Theme — Priorities** |
+| ![](screenshots/03_dark_results.png) | ![](screenshots/04_light_hero.png) |
+| **Dark Theme — Results** | **Light Theme — Hero** |
+| ![](screenshots/05_light_results.png) | ![](screenshots/06_mobile_hero.png) |
+| **Light Theme — Results** | **Mobile (375px)** |
 
 ---
 
